@@ -26,7 +26,7 @@ The bracket wildcard also supports *negation*. If the first character inside bra
 mark '!', the wildcard would match a single character that is **not** given in the bracket or is from the
 given range.
 
-If special characters are escaped with a backslash '\', they are treated as literals. In other words, `\?`
+If special characters are escaped with a backslash '\\', they are treated as literals. In other words, `\?`
 matches a literal question mark, `\-` matches a literal dash, `\\` matches a literal backslash, etc.
 Please note that '!' and '-' are not considered special characters outside of brackets. </p>
 
