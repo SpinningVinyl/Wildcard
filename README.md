@@ -1,8 +1,8 @@
 # Wildcard
 
 Wildcard is my own implementation of glob pattern matching. Glob patterns specify sets of strings with wildcard
-characters. This class provides a single static public method, `match(String, String)`, which returns
-`true` if the specified string matches the pattern.
+characters. This class provides a single static public method, `match(String pattern, String text)`, which returns
+`true` if the text matches the pattern.
 
 <p>This implementation supports the following wildcards:</p>
 
