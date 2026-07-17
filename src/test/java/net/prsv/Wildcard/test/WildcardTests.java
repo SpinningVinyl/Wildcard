@@ -105,6 +105,28 @@ class WildcardTests {
     }
 
     @Test
+    void supplementaryUnicodeCodePointTest() {
+        assertTrue(Wildcard.match("?", "😀"));
+        assertFalse(Wildcard.match("??", "😀"));
+        assertTrue(Wildcard.match("😀", "😀"));
+        assertTrue(Wildcard.match("prefix*suffix", "prefix😀suffix"));
+        assertTrue(Wildcard.match("[😀-🙏]", "😺"));
+        assertFalse(Wildcard.match("[😀-🙏]", "A"));
+        assertTrue(Wildcard.match("[!😀-🙏]", "A"));
+        assertFalse(Wildcard.match("[!😀-🙏]", "😺"));
+    }
+
+    @Test
+    void maximumUnicodeRangeTest() {
+        String maximumCodePoint = new String(Character.toChars(Character.MAX_CODE_POINT));
+        String rangePattern = "[A-" + maximumCodePoint + "]";
+
+        assertTrue(Wildcard.match(rangePattern, maximumCodePoint));
+        assertTrue(Wildcard.match(rangePattern, "😀"));
+        assertFalse(Wildcard.match(rangePattern, "0"));
+    }
+
+    @Test
     void WildcardBracketBasicTest() {
         assertTrue(Wildcard.match("[CB]at", "Cat"));
         assertTrue(Wildcard.match("[CB]at", "Bat"));

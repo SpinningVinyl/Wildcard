@@ -33,5 +33,11 @@ Please note that '!' and '-' are not considered special characters outside of br
 Unlike Unix glob, which never matches the forward slash character '/', this implementation treats '/'
 as a regular character.
 
+Wildcard matches Unicode code points rather than UTF-16 code units. Supplementary characters such as emoji therefore
+count as one character for `?`, bracket patterns, and ranges.
+
+Positions included in error messages are zero-based Unicode code-point offsets into the pattern, not UTF-16 code-unit
+indices. For example, a pattern element immediately following an emoji is at offset 1.
+
 Please take note that Wildcard will defensively replace all instances of the null terminator (U+0000) with
 the Unicode replacement character (U+FFFD) in both text and pattern.

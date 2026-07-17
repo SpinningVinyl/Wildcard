@@ -37,6 +37,12 @@ import java.util.*;
  * <p>Unlike Unix glob, which never matches the forward slash character '/', this implementation treats '/'
  * as a regular character.</p>
  *
+ * <p>Wildcard matches Unicode code points rather than UTF-16 code units. Supplementary characters therefore count
+ * as one character for question marks, bracket patterns, and ranges.</p>
+ *
+ * <p>Positions included in error messages are zero-based Unicode code-point offsets into the pattern, not UTF-16
+ * code-unit indices. For example, a pattern element immediately following an emoji is at offset 1.</p>
+ *
  * <p>Please take note that Wildcard will defensively replace all instances of the null terminator (U+0000) with
  * the Unicode replacement character (U+FFFD) in both text and pattern.</p>
  *
@@ -51,97 +57,105 @@ public class Wildcard {
         BRACKET
     }
 
+    private static class CodePointRange {
+        private final int from;
+        private final int to;
+
+        CodePointRange(int from, int to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        boolean contains(int codePoint) {
+            return codePoint >= from && codePoint <= to;
+        }
+    }
+
     private static class GlobToken {
         private final GlobTokenType type;
-        private final char c;
-        private final HashSet<Character> matchingChars = new HashSet<>();
+        private final int codePoint;
+        private final Set<Integer> matchingCodePoints = new HashSet<>();
+        private final List<CodePointRange> matchingRanges = new ArrayList<>();
         private final boolean negate;
 
-        GlobToken(GlobTokenType tokenType, char c, boolean negate) {
+        GlobToken(GlobTokenType tokenType, int codePoint, boolean negate) {
             this.type = tokenType;
-            this.c = c;
+            this.codePoint = codePoint;
             this.negate = negate;
         }
 
-        GlobToken(char c) {
-            this(GlobTokenType.LITERAL, c, false);
+        GlobToken(int codePoint) {
+            this(GlobTokenType.LITERAL, codePoint, false);
         }
 
         GlobToken(GlobTokenType tokenType) {
-            this(tokenType, '\u0000', false);
+            this(tokenType, 0, false);
         }
 
         GlobToken(GlobTokenType tokenType, boolean negate) {
-            this(tokenType, '\u0000', negate);
+            this(tokenType, 0, negate);
         }
 
     }
 
-    private static final Set<Character> specialChars = new HashSet<>();
-
-    static {
-        specialChars.add('[');
-        specialChars.add(']');
-        specialChars.add('*');
-        specialChars.add('-');
-        specialChars.add('!');
-        specialChars.add('?');
-    }
+    private static final Set<Integer> specialCodePoints = Set.of(
+            (int) '[', (int) ']', (int) '*', (int) '-', (int) '!', (int) '?');
 
 
-    private static Optional<GlobToken> parseBracketPattern(String bracketPattern) {
+    private static Optional<GlobToken> parseBracketPattern(int[] bracketPattern) {
 
-        if (bracketPattern.isEmpty()) {
+        if (bracketPattern.length == 0) {
             return Optional.empty();
         }
 
         int position = 0;
         boolean negate = false;
 
-        if (bracketPattern.charAt(position) == '!') {
+        if (bracketPattern[position] == '!') {
             negate = true;
-            bracketPattern = bracketPattern.substring(1);
+            position++;
         }
+        int contentStart = position;
 
         GlobToken result = new GlobToken(GlobTokenType.BRACKET, negate);
 
-        while (position < bracketPattern.length()) {
-            char c = bracketPattern.charAt(position);
+        while (position < bracketPattern.length) {
+            int codePoint = bracketPattern[position];
 
-            if (c == '\\') {
-                if (position + 1 < bracketPattern.length()) {
-                    char c2 = bracketPattern.charAt(position + 1);
+            if (codePoint == '\\') {
+                if (position + 1 < bracketPattern.length) {
+                    int nextCodePoint = bracketPattern[position + 1];
                     // if the next character in the pattern is a special character or another slash,
-                    if (specialChars.contains(c2) || c2 == c) {
-                        // add it to matching chars and skip to the next character
-                        result.matchingChars.add(c2);
+                    if (specialCodePoints.contains(nextCodePoint) || nextCodePoint == codePoint) {
+                        // add it to matching code points and skip to the next character
+                        result.matchingCodePoints.add(nextCodePoint);
                         position += 1;
                     }
                     // otherwise do nothing -- swallow the backslash
                 }
-            } else if (specialChars.contains(c) && c != '-') { // skip unescaped special characters EXCEPT dash
+            } else if (specialCodePoints.contains(codePoint) && codePoint != '-') {
+                // skip unescaped special characters EXCEPT dash
                 position += 1;
-            } else if (c == '-' && position != 0 && position + 1 != bracketPattern.length()) {
-                char fromChar = bracketPattern.charAt(position - 1);
-                char toChar = bracketPattern.charAt(position + 1);
+            } else if (codePoint == '-' && position != contentStart && position + 1 != bracketPattern.length) {
+                int fromCodePoint = bracketPattern[position - 1];
+                int toCodePoint = bracketPattern[position + 1];
                 // if the next character is escaped, skip the slash
                 // this should work, because slashes on their own should always come in pairs
-                if (toChar == '\\' && (position + 2 != bracketPattern.length())) {
-                    char nextNextChar = bracketPattern.charAt(position + 2);
-                    if (nextNextChar != toChar) {
-                        toChar = nextNextChar;
+                if (toCodePoint == '\\' && position + 2 != bracketPattern.length) {
+                    int nextNextCodePoint = bracketPattern[position + 2];
+                    if (nextNextCodePoint != toCodePoint) {
+                        toCodePoint = nextNextCodePoint;
                     }
                 }
-                if (toChar < fromChar) {
+                if (toCodePoint < fromCodePoint) {
                     throw new IllegalArgumentException(String.format("Invalid pattern: '%c' higher than '%c' in [%s]",
-                            fromChar, toChar, bracketPattern));
+                            fromCodePoint, toCodePoint,
+                            new String(bracketPattern, contentStart, bracketPattern.length - contentStart)));
                 }
-                for (char charToAdd = fromChar; charToAdd <= toChar; charToAdd++) {
-                    result.matchingChars.add(charToAdd);
-                }
+                result.matchingRanges.add(new CodePointRange(fromCodePoint, toCodePoint));
                 position += 1;
             } else {
-                result.matchingChars.add(c);
+                result.matchingCodePoints.add(codePoint);
             }
             position++;
         }
@@ -149,50 +163,50 @@ public class Wildcard {
         return Optional.of(result);
     }
 
-    private static ArrayList<GlobToken> tokenize(String pattern) {
+    private static ArrayList<GlobToken> tokenize(int[] pattern) {
 
         ArrayList<GlobToken> result = new ArrayList<>();
 
-        if (pattern.isEmpty()) {
+        if (pattern.length == 0) {
             return result;
         }
 
         int position = 0;
-        while (position < pattern.length()) {
+        while (position < pattern.length) {
 
-            char c = pattern.charAt(position);
+            int codePoint = pattern[position];
 
             Optional<GlobToken> token = Optional.empty();
 
-            if (c == '\\') {
-                if (position + 1 < pattern.length()) {
-                    char c2 = pattern.charAt(position + 1);
+            if (codePoint == '\\') {
+                if (position + 1 < pattern.length) {
+                    int nextCodePoint = pattern[position + 1];
                     // if the next character in the pattern is a special character or another slash,
-                    if (specialChars.contains(c2) || c2 == c) {
+                    if (specialCodePoints.contains(nextCodePoint) || nextCodePoint == codePoint) {
                         // create a new literal token and skip the next character
-                        token = Optional.of(new GlobToken(c2));
+                        token = Optional.of(new GlobToken(nextCodePoint));
                         position = position + 1;
                     }
                     // otherwise do nothing -- swallow the backslash
                 }
-            } else if (c == '*') {
+            } else if (codePoint == '*') {
                 if (result.isEmpty() || result.get(result.size() - 1).type != GlobTokenType.STAR) {
                     token = Optional.of(new GlobToken(GlobTokenType.STAR));
                 }
-            } else if (c == '?') {
+            } else if (codePoint == '?') {
                 token = Optional.of(new GlobToken(GlobTokenType.ANY_CHAR));
-            } else if (c == '[') {
+            } else if (codePoint == '[') {
                 int closingPosition = -1;
                 int i = 0;
                 boolean escaped = false;
                 // find the position of the next unescaped closing bracket
-                while (position + i < pattern.length()) {
-                    char bracketChar = pattern.charAt(position + i);
-                    if (bracketChar == ']' && !escaped) {
+                while (position + i < pattern.length) {
+                    int bracketCodePoint = pattern[position + i];
+                    if (bracketCodePoint == ']' && !escaped) {
                         closingPosition = position + i;
                         break;
                     }
-                    if (bracketChar == '\\') {
+                    if (bracketCodePoint == '\\') {
                         escaped = !escaped;
                     } else {
                         escaped = false;
@@ -204,7 +218,7 @@ public class Wildcard {
                     throw new IllegalArgumentException(String.format("Invalid pattern: unbalanced '[' at %d", position));
                 }
 
-                String bracketPattern = pattern.substring(position + 1, closingPosition);
+                int[] bracketPattern = Arrays.copyOfRange(pattern, position + 1, closingPosition);
                 int bracketPatternPosition = position;
 
                 // don't forget to move the cursor past the closing bracket
@@ -215,14 +229,16 @@ public class Wildcard {
                     throw new IllegalArgumentException(
                             String.format("Invalid pattern: empty '[]' at %d", bracketPatternPosition));
                 }
-                if (token.get().matchingChars.isEmpty() && token.get().negate) {
+                if (token.get().matchingCodePoints.isEmpty()
+                        && token.get().matchingRanges.isEmpty()
+                        && token.get().negate) {
                     throw new IllegalArgumentException(
                             String.format("Invalid pattern: '[!]' at %d", bracketPatternPosition));
                 }
 
 
             } else {
-                token = Optional.of(new GlobToken(c));
+                token = Optional.of(new GlobToken(codePoint));
             }
             token.ifPresent(result::add);
             position += 1;
@@ -230,15 +246,23 @@ public class Wildcard {
         return result;
     }
 
-    private static boolean tokenMatches(GlobToken token, char textChar) {
+    private static boolean tokenMatches(GlobToken token, int textCodePoint) {
         switch (token.type) {
             case ANY_CHAR:
                 return true;
             case BRACKET:
-                boolean matched = token.matchingChars.contains(textChar);
+                boolean matched = token.matchingCodePoints.contains(textCodePoint);
+                if (!matched) {
+                    for (CodePointRange range : token.matchingRanges) {
+                        if (range.contains(textCodePoint)) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                }
                 return token.negate ? !matched : matched;
             case LITERAL:
-                return token.c == textChar;
+                return token.codePoint == textCodePoint;
             case STAR:
                 throw new IllegalStateException("STAR tokens must be handled by the matching algorithm");
             default:
@@ -246,9 +270,9 @@ public class Wildcard {
         }
     }
 
-    private static boolean match(List<GlobToken> tokenStream, String text) {
-        boolean[] state = new boolean[text.length() + 1];
-        boolean[] nextState = new boolean[text.length() + 1];
+    private static boolean match(List<GlobToken> tokenStream, int[] text) {
+        boolean[] state = new boolean[text.length + 1];
+        boolean[] nextState = new boolean[text.length + 1];
         state[0] = true;
 
         for (GlobToken token : tokenStream) {
@@ -256,13 +280,13 @@ public class Wildcard {
 
             if (token.type == GlobTokenType.STAR) {
                 nextState[0] = state[0];
-                for (int textIndex = 1; textIndex <= text.length(); textIndex++) {
+                for (int textIndex = 1; textIndex <= text.length; textIndex++) {
                     nextState[textIndex] = state[textIndex] || nextState[textIndex - 1];
                 }
             } else {
-                for (int textIndex = 1; textIndex <= text.length(); textIndex++) {
+                for (int textIndex = 1; textIndex <= text.length; textIndex++) {
                     nextState[textIndex] = state[textIndex - 1]
-                            && tokenMatches(token, text.charAt(textIndex - 1));
+                            && tokenMatches(token, text[textIndex - 1]);
                 }
             }
 
@@ -271,7 +295,7 @@ public class Wildcard {
             nextState = oldState;
         }
 
-        return state[text.length()];
+        return state[text.length];
     }
 
     /**
@@ -284,8 +308,10 @@ public class Wildcard {
     public static boolean match(String pattern, String text) throws IllegalArgumentException {
         pattern = pattern.replace('\u0000', '\ufffd');
         text = text.replace('\u0000', '\ufffd');
-        ArrayList<GlobToken> tokenStream = tokenize(pattern);
-        return match(tokenStream, text);
+        int[] patternCodePoints = pattern.codePoints().toArray();
+        int[] textCodePoints = text.codePoints().toArray();
+        ArrayList<GlobToken> tokenStream = tokenize(patternCodePoints);
+        return match(tokenStream, textCodePoints);
     }
 
 
