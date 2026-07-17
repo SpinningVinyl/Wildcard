@@ -3,6 +3,8 @@ package net.prsv.Wildcard.test;
 import net.prsv.Wildcard.*;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WildcardTests {
@@ -20,6 +22,18 @@ class WildcardTests {
         assertTrue(Wildcard.match("*Law*", "Lawyer"));
         assertFalse(Wildcard.match("*Law*", "La"));
         assertFalse(Wildcard.match("*Law*", "aw"));
+
+        assertTrue(Wildcard.match("ab*cd*ef", "ab12cd34ef"));
+        assertTrue(Wildcard.match("ab*cd*ef", "abcdef"));
+        assertFalse(Wildcard.match("ab*cd*ef", "ab12cd34eg"));
+    }
+
+    @Test
+    void pathologicalStarPatternCompletesPromptly() {
+        String pattern = "*a".repeat(28) + "b";
+        String text = "a".repeat(28) + "c";
+
+        assertTimeout(Duration.ofSeconds(1), () -> assertFalse(Wildcard.match(pattern, text)));
     }
 
     @Test

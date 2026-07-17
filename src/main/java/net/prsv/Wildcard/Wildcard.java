@@ -176,7 +176,9 @@ public class Wildcard {
                     // otherwise do nothing -- swallow the backslash
                 }
             } else if (c == '*') {
-                token = Optional.of(new GlobToken(GlobTokenType.STAR));
+                if (result.isEmpty() || result.get(result.size() - 1).type != GlobTokenType.STAR) {
+                    token = Optional.of(new GlobToken(GlobTokenType.STAR));
+                }
             } else if (c == '?') {
                 token = Optional.of(new GlobToken(GlobTokenType.ANY_CHAR));
             } else if (c == '[') {
@@ -228,59 +230,48 @@ public class Wildcard {
         return result;
     }
 
+    private static boolean tokenMatches(GlobToken token, char textChar) {
+        switch (token.type) {
+            case ANY_CHAR:
+                return true;
+            case BRACKET:
+                boolean matched = token.matchingChars.contains(textChar);
+                return token.negate ? !matched : matched;
+            case LITERAL:
+                return token.c == textChar;
+            case STAR:
+                throw new IllegalStateException("STAR tokens must be handled by the matching algorithm");
+            default:
+                throw new IllegalStateException("Unsupported token type: " + token.type);
+        }
+    }
+
     private static boolean match(List<GlobToken> tokenStream, String text) {
-        int textIndex = 0;
-        int patternIndex = 0;
+        boolean[] state = new boolean[text.length() + 1];
+        boolean[] nextState = new boolean[text.length() + 1];
+        state[0] = true;
 
-        while (patternIndex < tokenStream.size() && textIndex < text.length()) {
+        for (GlobToken token : tokenStream) {
+            Arrays.fill(nextState, false);
 
-            GlobToken currentToken = tokenStream.get(patternIndex);
-            char currentChar = text.charAt(textIndex);
-
-            switch (currentToken.type) {
-                case ANY_CHAR: // '?'
-                    // simply advance both the pattern and the text
-                    patternIndex++;
-                    textIndex++;
-                    break;
-                case STAR: // '*'
-                    // call match() recursively until we either find a match or not
-                    if (match(tokenStream.subList(patternIndex + 1, tokenStream.size()), text.substring(textIndex))) {
-                        return true;
-                    }
-                    textIndex += 1;
-                    break;
-                case BRACKET: // handle the bracket pattern
-                    boolean matched = currentToken.matchingChars.contains(currentChar);
-                    if (currentToken.negate) {
-                        matched = !matched;
-                    }
-                    if (!matched) {
-                        return false;
-                    }
-                    patternIndex += 1;
-                    textIndex += 1;
-                    break;
-                default: // character literal
-                    if (currentToken.c == currentChar) { // if we match, advance
-                        patternIndex += 1;
-                        textIndex += 1;
-                    }
-                    else { // else fail
-                        return false;
-                    }
+            if (token.type == GlobTokenType.STAR) {
+                nextState[0] = state[0];
+                for (int textIndex = 1; textIndex <= text.length(); textIndex++) {
+                    nextState[textIndex] = state[textIndex] || nextState[textIndex - 1];
+                }
+            } else {
+                for (int textIndex = 1; textIndex <= text.length(); textIndex++) {
+                    nextState[textIndex] = state[textIndex - 1]
+                            && tokenMatches(token, text.charAt(textIndex - 1));
+                }
             }
+
+            boolean[] oldState = state;
+            state = nextState;
+            nextState = oldState;
         }
 
-        // make sure that we properly handle "*", "**", "***", etc.
-        if (textIndex == text.length()) {
-            while (patternIndex < tokenStream.size() && tokenStream.get(patternIndex).type == GlobTokenType.STAR) {
-                patternIndex++;
-            }
-            return patternIndex == tokenStream.size();
-        }
-
-        return false;
+        return state[text.length()];
     }
 
     /**
