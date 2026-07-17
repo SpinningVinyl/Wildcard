@@ -31,6 +31,7 @@ class WildcardTests {
         assertTrue(Wildcard.match("[a\\-c]", "c"));
         assertTrue(Wildcard.match("[a\\-c]", "-"));
         assertFalse(Wildcard.match("[a\\-c]", "b"));
+        assertTrue(Wildcard.match("[\\\\]", "\\"));
     }
 
     @Test

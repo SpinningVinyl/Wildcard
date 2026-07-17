@@ -182,11 +182,18 @@ public class Wildcard {
             } else if (c == '[') {
                 int closingPosition = -1;
                 int i = 0;
+                boolean escaped = false;
                 // find the position of the next unescaped closing bracket
                 while (position + i < pattern.length()) {
-                    if (pattern.charAt(position + i) == ']' && pattern.charAt(position + i - 1) != '\\') {
+                    char bracketChar = pattern.charAt(position + i);
+                    if (bracketChar == ']' && !escaped) {
                         closingPosition = position + i;
                         break;
+                    }
+                    if (bracketChar == '\\') {
+                        escaped = !escaped;
+                    } else {
+                        escaped = false;
                     }
                     i += 1;
                 }
