@@ -89,7 +89,11 @@ public class Wildcard {
     }
 
 
-    private static GlobToken parseBracketPattern(String bracketPattern) {
+    private static Optional<GlobToken> parseBracketPattern(String bracketPattern) {
+
+        if (bracketPattern.isEmpty()) {
+            return Optional.empty();
+        }
 
         int position = 0;
         boolean negate = false;
@@ -142,15 +146,15 @@ public class Wildcard {
             position++;
         }
 
-        return result;
+        return Optional.of(result);
     }
 
     private static ArrayList<GlobToken> tokenize(String pattern) {
 
         ArrayList<GlobToken> result = new ArrayList<>();
 
-        if (pattern == null || pattern.isEmpty()) {
-            return null;
+        if (pattern.isEmpty()) {
+            return result;
         }
 
         int position = 0;
@@ -158,7 +162,7 @@ public class Wildcard {
 
             char c = pattern.charAt(position);
 
-            GlobToken token = null;
+            Optional<GlobToken> token = Optional.empty();
 
             if (c == '\\') {
                 if (position + 1 < pattern.length()) {
@@ -166,23 +170,30 @@ public class Wildcard {
                     // if the next character in the pattern is a special character or another slash,
                     if (specialChars.contains(c2) || c2 == c) {
                         // create a new literal token and skip the next character
-                        token = new GlobToken(c2);
+                        token = Optional.of(new GlobToken(c2));
                         position = position + 1;
                     }
                     // otherwise do nothing -- swallow the backslash
                 }
             } else if (c == '*') {
-                token = new GlobToken(GlobTokenType.STAR);
+                token = Optional.of(new GlobToken(GlobTokenType.STAR));
             } else if (c == '?') {
-                token = new GlobToken(GlobTokenType.ANY_CHAR);
+                token = Optional.of(new GlobToken(GlobTokenType.ANY_CHAR));
             } else if (c == '[') {
                 int closingPosition = -1;
                 int i = 0;
+                boolean escaped = false;
                 // find the position of the next unescaped closing bracket
                 while (position + i < pattern.length()) {
-                    if (pattern.charAt(position + i) == ']' && pattern.charAt(position + i - 1) != '\\') {
+                    char bracketChar = pattern.charAt(position + i);
+                    if (bracketChar == ']' && !escaped) {
                         closingPosition = position + i;
                         break;
+                    }
+                    if (bracketChar == '\\') {
+                        escaped = !escaped;
+                    } else {
+                        escaped = false;
                     }
                     i += 1;
                 }
@@ -192,28 +203,32 @@ public class Wildcard {
                 }
 
                 String bracketPattern = pattern.substring(position + 1, closingPosition);
+                int bracketPatternPosition = position;
 
                 // don't forget to move the cursor past the closing bracket
                 position = closingPosition;
 
                 token = parseBracketPattern(bracketPattern);
+                if (token.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid pattern: empty '[]' at %d", bracketPatternPosition));
+                }
+                if (token.get().matchingChars.isEmpty() && token.get().negate) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid pattern: '[!]' at %d", bracketPatternPosition));
+                }
 
 
             } else {
-                token = new GlobToken(c);
+                token = Optional.of(new GlobToken(c));
             }
-            if (token != null) {
-                result.add(token);
-            }
+            token.ifPresent(result::add);
             position += 1;
         }
         return result;
     }
 
     private static boolean match(List<GlobToken> tokenStream, String text) {
-        if (tokenStream == null) {
-            return (text == null || text.isEmpty());
-        }
         int textIndex = 0;
         int patternIndex = 0;
 

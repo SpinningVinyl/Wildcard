@@ -31,6 +31,7 @@ class WildcardTests {
         assertTrue(Wildcard.match("[a\\-c]", "c"));
         assertTrue(Wildcard.match("[a\\-c]", "-"));
         assertFalse(Wildcard.match("[a\\-c]", "b"));
+        assertTrue(Wildcard.match("[\\\\]", "\\"));
     }
 
     @Test
@@ -43,6 +44,24 @@ class WildcardTests {
     void emptyPatternTest() {
         assertTrue(Wildcard.match("", ""));
         assertFalse(Wildcard.match("", "a"));
+    }
+
+    @Test
+    void emptyBracketPatternTest() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Wildcard.match("prefix[]suffix", "prefixsuffix"));
+
+        assertEquals("Invalid pattern: empty '[]' at 6", exception.getMessage());
+    }
+
+    @Test
+    void emptyNegatedBracketPatternTest() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Wildcard.match("prefix[!]suffix", "prefixxsuffix"));
+
+        assertEquals("Invalid pattern: '[!]' at 6", exception.getMessage());
     }
 
     @Test
