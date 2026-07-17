@@ -48,7 +48,10 @@ import java.util.*;
  *
  * @author Pavel Urusov
  */
-public class Wildcard {
+public final class Wildcard {
+
+    private Wildcard() {
+    }
 
     private enum GlobTokenType {
         LITERAL,
