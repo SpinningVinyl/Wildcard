@@ -206,6 +206,10 @@ public class Wildcard {
                     throw new IllegalArgumentException(
                             String.format("Invalid pattern: empty '[]' at %d", bracketPatternPosition));
                 }
+                if (token.get().matchingChars.isEmpty() && token.get().negate) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid pattern: '[!]' at %d", bracketPatternPosition));
+                }
 
 
             } else {

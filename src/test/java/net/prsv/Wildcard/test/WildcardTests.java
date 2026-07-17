@@ -55,6 +55,15 @@ class WildcardTests {
     }
 
     @Test
+    void emptyNegatedBracketPatternTest() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Wildcard.match("prefix[!]suffix", "prefixxsuffix"));
+
+        assertEquals("Invalid pattern: '[!]' at 6", exception.getMessage());
+    }
+
+    @Test
     void emptyStringTest() {
         assertTrue(Wildcard.match("*", ""));
         assertTrue(Wildcard.match("**", ""));
