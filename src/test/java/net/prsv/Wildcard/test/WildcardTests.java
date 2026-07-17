@@ -46,6 +46,15 @@ class WildcardTests {
     }
 
     @Test
+    void emptyBracketPatternTest() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Wildcard.match("prefix[]suffix", "prefixsuffix"));
+
+        assertEquals("Invalid pattern: empty '[]' at 6", exception.getMessage());
+    }
+
+    @Test
     void emptyStringTest() {
         assertTrue(Wildcard.match("*", ""));
         assertTrue(Wildcard.match("**", ""));
