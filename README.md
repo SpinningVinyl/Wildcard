@@ -1,8 +1,11 @@
 # Wildcard
 
 Wildcard is my own implementation of glob pattern matching. Glob patterns specify sets of strings with wildcard
-characters. This class provides a single static public method, `match(String pattern, String text)`, which returns
-`true` if the text matches the pattern.
+characters. The `match(String pattern, String text)` method returns `true` if the text matches the pattern.
+
+The `matchWithLimit(String pattern, String text, long workLimit)` method performs the same match after checking that
+the product of the pattern and text lengths, measured in Unicode code points, does not exceed the provided work limit.
+It throws an `IllegalArgumentException` when the estimate exceeds the limit.
 
 <p>This implementation supports the following wildcards:</p>
 
