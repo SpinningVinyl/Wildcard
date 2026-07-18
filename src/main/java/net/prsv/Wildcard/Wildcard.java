@@ -34,6 +34,11 @@ import java.util.*;
  * matches a literal question mark, {@code "\-"} matches a literal dash, '\\' matches a literal backslash, etc.
  * Please note that '!' and '-' are not considered special characters outside of brackets. </p>
  *
+ * <p>An unescaped backslash is always swallowed, both in ordinary patterns and inside bracket patterns. If it precedes
+ * a character that does not form a recognized escape sequence, the backslash is discarded and the following character
+ * is processed normally. Consequently, {@code \a} matches {@code a}, and a pattern consisting of a single trailing
+ * backslash matches the empty string.</p>
+ *
  * <p>Unlike Unix glob, which never matches the forward slash character '/', this implementation treats '/'
  * as a regular character.</p>
  *
