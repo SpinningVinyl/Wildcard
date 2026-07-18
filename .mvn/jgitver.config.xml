@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://jgitver.github.io/maven/configuration/1.1.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://jgitver.github.io/maven/configuration/1.1.0 https://jgitver.github.io/maven/configuration/jgitver-configuration-v1_1_0.xsd">
+    <strategy>PATTERN</strategy>
+    <versionPattern>${v}${&lt;meta.QUALIFIED_BRANCH_NAME}${&lt;meta.COMMIT_DISTANCE}-SNAPSHOT</versionPattern>
+    <tagVersionPattern>${v}</tagVersionPattern>
+    <regexVersionTag>v?([0-9]+(?:\.[0-9]+){0,2}(?:-[a-zA-Z0-9\-_]+)?)</regexVersionTag>
+</configuration>
