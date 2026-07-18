@@ -1,6 +1,6 @@
-package net.prsv.Wildcard.test;
+package net.prsv.wildcard.test;
 
-import net.prsv.Wildcard.*;
+import net.prsv.wildcard.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
