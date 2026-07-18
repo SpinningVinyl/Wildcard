@@ -46,3 +46,5 @@ indices. For example, a pattern element immediately following an emoji is at off
 
 Please take note that Wildcard will defensively replace all instances of the null terminator (U+0000) with
 the Unicode replacement character (U+FFFD) in both text and pattern.
+
+`null` arguments are treated as empty strings.
