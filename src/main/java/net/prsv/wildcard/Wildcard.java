@@ -1,4 +1,4 @@
-package net.prsv.Wildcard;
+package net.prsv.wildcard;
 
 import java.util.*;
 
