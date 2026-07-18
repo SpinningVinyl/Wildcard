@@ -221,6 +221,22 @@ class WildcardTests {
         assertFalse(Wildcard.match(null, "a"));
     }
 
+    @Test
+    void matchWithLimitTest() {
+        assertTrue(Wildcard.matchWithLimit("Law*", "Lawyer", 24L));
+        assertFalse(Wildcard.matchWithLimit("Law*", "GrokLaw", 28L));
+        assertTrue(Wildcard.matchWithLimit("?", "😀", 1L));
+        assertTrue(Wildcard.matchWithLimit(null, null, 0L));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> Wildcard.matchWithLimit("Law*", "Lawyer", 23L));
+
+        assertEquals(
+                "Work estimate (24) exceeds the provided work limit (23)",
+                exception.getMessage());
+    }
+
 
 
 }

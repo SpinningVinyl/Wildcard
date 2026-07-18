@@ -4,8 +4,8 @@ import java.util.*;
 
 /**
  * <p>Wildcard is my own implementation of glob pattern matching. Glob patterns specify sets of strings with wildcard
- * characters. This class provides a single static public method, {@link #match(String, String)}, which returns
- * {@code true} if the specified string matches the pattern.</p>
+ * characters. The {@link #match(String, String)} method returns {@code true} if the specified string matches the
+ * pattern.</p>
  *
  * <p>This implementation supports the following wildcards:</p>
  * <ul>
@@ -327,6 +327,29 @@ public final class Wildcard {
         int[] textCodePoints = text.codePoints().toArray();
         ArrayList<GlobToken> tokenStream = tokenize(patternCodePoints);
         return match(tokenStream, textCodePoints);
+    }
+
+    /**
+     * Checks whether the specified string matches the specified glob pattern without exceeding the provided work limit.
+     * The work estimate is the product of the pattern and text lengths in Unicode code points. {@code null} pattern and
+     * text arguments are treated as empty strings.
+     * @param pattern pattern to match the specified string against
+     * @param text string to match against the specified pattern
+     * @param workLimit maximum permitted work estimate
+     * @return {@code true} if the specified string matches the specified pattern
+     * @throws IllegalArgumentException if the work estimate exceeds the provided limit, or if the pattern is malformed
+     */
+    public static boolean matchWithLimit(String pattern, String text, long workLimit) throws IllegalArgumentException {
+        long patternLength = pattern == null ? 0L : pattern.codePointCount(0, pattern.length());
+        long textLength = text == null ? 0L : text.codePointCount(0, text.length());
+        long workEstimate = patternLength * textLength;
+
+        if (workEstimate > workLimit) {
+            throw new IllegalArgumentException(String.format(
+                    "Work estimate (%d) exceeds the provided work limit (%d)", workEstimate, workLimit));
+        }
+
+        return match(pattern, text);
     }
 
 
