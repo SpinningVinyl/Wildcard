@@ -31,7 +31,7 @@ given range.
 
 If special characters are escaped with a backslash '\\', they are treated as literals. In other words, `\?`
 matches a literal question mark, `\-` matches a literal dash, `\\` matches a literal backslash, etc.
-Please note that '!' and '-' are not considered special characters outside of brackets. </p>
+Please note that '!' and '-' are not considered special characters outside of brackets.
 
 An unescaped backslash is always swallowed, both in ordinary patterns and inside bracket patterns. If it precedes a
 character that does not form a recognized escape sequence, the backslash is discarded and the following character is
