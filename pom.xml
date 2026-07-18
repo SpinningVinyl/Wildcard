@@ -8,6 +8,34 @@
     <artifactId>wildcard</artifactId>
     <version>1.0</version>
 
+    <name>Wildcard</name>
+    <description>A compact, Unicode-aware glob pattern matching library for Java.</description>
+    <url>https://github.com/SpinningVinyl/Wildcard</url>
+    <inceptionYear>2025</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/license/mit</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>SpinningVinyl</id>
+            <name>Pavel Urusov</name>
+            <url>https://github.com/SpinningVinyl</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/SpinningVinyl/Wildcard.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/SpinningVinyl/Wildcard.git</developerConnection>
+        <url>https://github.com/SpinningVinyl/Wildcard</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,5 +60,38 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.12.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
