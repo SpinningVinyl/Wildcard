@@ -308,12 +308,19 @@ public final class Wildcard {
 
     /**
      * Checks whether the specified string matches the specified glob pattern.
+     * {@code null} arguments are treated as empty strings.
      * @param pattern pattern to match the specified string against
      * @param text string to match against the specified pattern
      * @return {@code true} if the specified string matches the specified pattern
      * @throws IllegalArgumentException if the pattern is malformed in such a way that it can't be sanitized
      */
     public static boolean match(String pattern, String text) throws IllegalArgumentException {
+        if (pattern == null) {
+            pattern = "";
+        }
+        if (text == null) {
+            text = "";
+        }
         pattern = pattern.replace('\u0000', '\ufffd');
         text = text.replace('\u0000', '\ufffd');
         int[] patternCodePoints = pattern.codePoints().toArray();

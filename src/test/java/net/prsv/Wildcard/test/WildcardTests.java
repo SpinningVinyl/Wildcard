@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WildcardTests {
 
     @Test
-    void WildcardStarTest() {
+    void wildcardStarTest() {
         assertTrue(Wildcard.match("Law*", "Law"));
         assertTrue(Wildcard.match("Law*", "Lawyer"));
         assertFalse(Wildcard.match("Law*", "GrokLaw"));
@@ -103,7 +103,7 @@ class WildcardTests {
     }
 
     @Test
-    void WildcardAnyCharTest() {
+    void wildcardAnyCharTest() {
         assertTrue(Wildcard.match("?at", "Cat"));
         assertTrue(Wildcard.match("?at", "cat"));
         assertTrue(Wildcard.match("?at", "Bat"));
@@ -134,7 +134,7 @@ class WildcardTests {
     }
 
     @Test
-    void WildcardBracketBasicTest() {
+    void wildcardBracketBasicTest() {
         assertTrue(Wildcard.match("[CB]at", "Cat"));
         assertTrue(Wildcard.match("[CB]at", "Bat"));
         assertFalse(Wildcard.match("[CB]at", "cat"));
@@ -143,7 +143,7 @@ class WildcardTests {
     }
     
     @Test
-    void WildcardBracketBasicNegationTest() {
+    void wildcardBracketBasicNegationTest() {
         assertFalse(Wildcard.match("*.[!abc]", "main.a"));
         assertFalse(Wildcard.match("*.[!abc]", "main.b"));
         assertFalse(Wildcard.match("*.[!abc]", "main.c"));
@@ -152,7 +152,7 @@ class WildcardTests {
     }
 
     @Test
-    void WildcardBracketRangeTest() {
+    void wildcardBracketRangeTest() {
         assertTrue(Wildcard.match("Letter[0-9]", "Letter0"));
         assertTrue(Wildcard.match("Letter[0-9]", "Letter1"));
         assertTrue(Wildcard.match("Letter[0-9]", "Letter2"));
@@ -163,7 +163,7 @@ class WildcardTests {
     }
 
     @Test
-    void WildcardBracketRangeNegationTest() {
+    void wildcardBracketRangeNegationTest() {
         assertTrue(Wildcard.match("Letter[!3-5]", "Letter1"));
         assertTrue(Wildcard.match("Letter[!3-5]", "Letter2"));
         assertTrue(Wildcard.match("Letter[!3-5]", "Letter6"));
@@ -175,7 +175,7 @@ class WildcardTests {
     }
 
     @Test
-    void WildcardBracketEdgeCases() {
+    void wildcardBracketEdgeCases() {
         assertTrue(Wildcard.match("[\\--0]", "-" ));
         assertTrue(Wildcard.match("[\\--0]", "." ));
         assertTrue(Wildcard.match("[\\--0]", "/" ));
@@ -209,7 +209,16 @@ class WildcardTests {
         assertFalse(Wildcard.match("[a-d1-3]", "5"));
         assertFalse(Wildcard.match("[a-d1-3]", "g"));
         assertFalse(Wildcard.match("[a-d1-3]", "a-d1-3"));
+    }
 
+    @Test
+    void wildcardNullBehaviorTest() {
+        assertTrue(Wildcard.match(null, null));
+        assertTrue(Wildcard.match(null, ""));
+        assertTrue(Wildcard.match("", null));
+        assertTrue(Wildcard.match("*", null));
+        assertFalse(Wildcard.match("?", null));
+        assertFalse(Wildcard.match(null, "a"));
     }
 
 
