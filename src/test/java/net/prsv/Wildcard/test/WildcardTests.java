@@ -49,6 +49,18 @@ class WildcardTests {
     }
 
     @Test
+    void unescapedCharactersInsideBracketsTest() {
+        assertTrue(Wildcard.match("[[]", "["));
+        assertTrue(Wildcard.match("[*]", "*"));
+        assertTrue(Wildcard.match("[?]", "?"));
+        assertTrue(Wildcard.match("[a!]", "!"));
+        assertTrue(Wildcard.match("[!!]", "a"));
+        assertFalse(Wildcard.match("[!!]", "!"));
+        assertTrue(Wildcard.match("[-a]", "-"));
+        assertTrue(Wildcard.match("[a-]", "-"));
+    }
+
+    @Test
     void unknownAndTrailingEscapeSequenceTest() {
         assertTrue(Wildcard.match("\\a", "a"));
         assertTrue(Wildcard.match("[\\a]", "a"));
@@ -181,9 +193,9 @@ class WildcardTests {
         assertTrue(Wildcard.match("[\\--0]", "/" ));
         assertTrue(Wildcard.match("[\\--0]", "0" ));
         assertFalse(Wildcard.match("[\\--0]", "z"));
-        assertFalse(Wildcard.match("[[-]", "-"  ));
+        assertTrue(Wildcard.match("[[-]", "-"  ));
         assertTrue(Wildcard.match("[[\\-]", "-"  ));
-        assertFalse(Wildcard.match("[[-]", "["  ));
+        assertTrue(Wildcard.match("[[-]", "["  ));
         assertTrue(Wildcard.match("[\\[-]", "["));
         assertFalse(Wildcard.match("[[-]", "z" ));
 

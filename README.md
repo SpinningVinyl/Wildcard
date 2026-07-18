@@ -29,6 +29,11 @@ The bracket wildcard also supports *negation*. If the first character inside bra
 mark '!', the wildcard would match a single character that is **not** given in the bracket or is from the
 given range.
 
+Inside brackets, `*`, `?`, and `[` are literals and do not need escaping. A backslash and a closing bracket must be
+escaped to be treated as literals. A dash denotes a range only when it appears between two range endpoints, and an
+exclamation mark denotes negation only in the first position. For example, `[[]` matches `[`, `[*]` matches `*`, and
+`[?]` matches `?`.
+
 If special characters are escaped with a backslash '\\', they are treated as literals. In other words, `\?`
 matches a literal question mark, `\-` matches a literal dash, `\\` matches a literal backslash, etc.
 Please note that '!' and '-' are not considered special characters outside of brackets.
