@@ -30,6 +30,11 @@ If special characters are escaped with a backslash '\\', they are treated as lit
 matches a literal question mark, `\-` matches a literal dash, `\\` matches a literal backslash, etc.
 Please note that '!' and '-' are not considered special characters outside of brackets. </p>
 
+An unescaped backslash is always swallowed, both in ordinary patterns and inside bracket patterns. If it precedes a
+character that does not form a recognized escape sequence, the backslash is discarded and the following character is
+processed normally. Consequently, `\a` matches `a`, and a pattern consisting of a single trailing `\` matches the
+empty string.
+
 Unlike Unix glob, which never matches the forward slash character '/', this implementation treats '/'
 as a regular character.
 

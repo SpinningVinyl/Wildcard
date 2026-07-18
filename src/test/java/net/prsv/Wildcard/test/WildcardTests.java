@@ -49,6 +49,13 @@ class WildcardTests {
     }
 
     @Test
+    void unknownAndTrailingEscapeSequenceTest() {
+        assertTrue(Wildcard.match("\\a", "a"));
+        assertTrue(Wildcard.match("[\\a]", "a"));
+        assertTrue(Wildcard.match("\\", ""));
+    }
+
+    @Test
     void unescapedBangDashOutsideOfBracketsTest() {
         assertTrue(Wildcard.match("!", "!"));
         assertTrue(Wildcard.match("-", "-"));
