@@ -30,6 +30,10 @@ import java.util.*;
  * mark '!', the wildcard would match a single character that is <b>not</b> given in the bracket or is from the
  * given range.</p>
  *
+ * <p>Inside brackets, '*', '?', and '[' are literals and do not need escaping. A backslash and a closing bracket must
+ * be escaped to be treated as literals. A dash denotes a range only when it appears between two range endpoints, and
+ * an exclamation mark denotes negation only in the first position.</p>
+ *
  * <p>If special characters are escaped with a backslash '\', they are treated as literals. In other words, {@code "\?"}
  * matches a literal question mark, {@code "\-"} matches a literal dash, '\\' matches a literal backslash, etc.
  * Please note that '!' and '-' are not considered special characters outside of brackets. </p>
@@ -141,9 +145,6 @@ public final class Wildcard {
                     }
                     // otherwise do nothing -- swallow the backslash
                 }
-            } else if (specialCodePoints.contains(codePoint) && codePoint != '-') {
-                // skip unescaped special characters EXCEPT dash
-                position += 1;
             } else if (codePoint == '-' && position != contentStart && position + 1 != bracketPattern.length) {
                 int fromCodePoint = bracketPattern[position - 1];
                 int toCodePoint = bracketPattern[position + 1];
